@@ -4,33 +4,40 @@ from urllib.parse import urlparse
 import hashlib
 
 def fetch_image(url):
-    """Fetch and save an image from a given URL."""
+    """Fetch and save an image from a given URL with content-type validation."""
     try:
         # Create directory if it doesn't exist
         os.makedirs("Fetched_Images", exist_ok=True)
 
-        # Fetch the image with a timeout for safety
-        response = requests.get(url, timeout=10)
+        # Fetch the image with a timeout
+        response = requests.get(url, timeout=10, stream=True)
         response.raise_for_status()  # Handle HTTP errors
+
+        # Check if Content-Type indicates an image
+        content_type = response.headers.get("Content-Type", "")
+        if not content_type.startswith("image/"):
+            print(f"✗ Skipping: Content-Type '{content_type}' is not an image for {url}")
+            return
 
         # Extract filename from URL or generate one
         parsed_url = urlparse(url)
         filename = os.path.basename(parsed_url.path)
 
-        if not filename:  # If URL has no file name
+        if not filename:  # If URL has no filename
             filename = "downloaded_image.jpg"
 
         # Prevent duplicates using a hash of the content
-        file_hash = hashlib.md5(response.content).hexdigest()
+        image_data = response.content
+        file_hash = hashlib.md5(image_data).hexdigest()
         name, ext = os.path.splitext(filename)
-        filename = f"{name}_{file_hash[:8]}{ext}"  # Add hash to filename
+        filename = f"{name}_{file_hash[:8]}{ext}"
 
         filepath = os.path.join("Fetched_Images", filename)
 
         # Save only if not already present
         if not os.path.exists(filepath):
             with open(filepath, 'wb') as f:
-                f.write(response.content)
+                f.write(image_data)
             print(f"✓ Successfully fetched: {filename}")
             print(f"✓ Image saved to {filepath}")
         else:
