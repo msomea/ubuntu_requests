@@ -1,11 +1,12 @@
-# Ubuntu Image Fetcher
+# Ubuntu Image Scraper
 
-A mindful Python tool for fetching and organizing images from the web.  
-This script downloads images from user-provided URLs, validates them, prevents duplicates, and saves them in an organized directory.
+A mindful Python tool for scraping and downloading images from webpages.  
+This script visits each provided webpage, extracts images, validates them, prevents duplicates, and saves them in an organized directory.
 
 ## Features
 
-- **Multiple URL support** – Enter several image URLs at once (comma-separated).
+- **Scrape images from webpages** – Automatically extracts `<img>` tags.
+- **Multiple webpage support** – Enter several URLs at once (comma-separated).
 - **Content-Type validation** – Ensures only images are downloaded.
 - **Automatic directory creation** – Saves all images into a `Fetched_Images` folder.
 - **Duplicate prevention** – Uses MD5 hashing to avoid saving the same image twice.
@@ -14,50 +15,43 @@ This script downloads images from user-provided URLs, validates them, prevents d
 ## Requirements
 
 - Python 3.x
-- `requests` library
+- Libraries: `requests`, `beautifulsoup4`
 
 Install dependencies using:
 ```bash
-pip install requests
+pip install requests beautifulsoup4
+```
 
-
-Usage
+## Usage
 
 1. Clone or download this repository.
-
 2. Run the script:
-
-python main.py
-
-3. Enter one or multiple URLs containing images separated by commas when prompted.
+   ```bash
+   python main.py
+   ```
+3. Enter one or multiple webpage URLs separated by commas when prompted.
 
 Example:
+```
+Please enter the webpage URLs: https://example.com, https://anotherpage.com
+```
 
-Please enter the image URLs: https://example.com/image1.jpg, https://example.com/image2.png
+4. Images will be saved in the `Fetched_Images` folder.
 
+## Precautions
 
-4. Images will be saved in the Fetched_Images folder.
+- Only files with `Content-Type` starting with `image/` will be downloaded.
+- Duplicates are detected and skipped using content hashing.
+- Ensure you have permission to download and store the images.
 
-Precautions
-
-Only files with Content-Type starting with image/ will be downloaded.
-
-Duplicates are detected and skipped using content hashing.
-
-Ensure you have permission to download and store the images.
-
-Ubuntu Principles
+## Ubuntu Principles
 
 This project embodies Ubuntu principles:
+- **Community**: Connects to the wider web community by fetching and sharing resources.
+- **Respect**: Handles errors gracefully without crashing.
+- **Sharing**: Organizes images for easy access and redistribution.
+- **Practicality**: A lightweight tool for real-world use.
 
-Community: Connects to the wider web community by fetching and sharing resources.
-
-Respect: Handles errors gracefully without crashing.
-
-Sharing: Organizes images for easy access and redistribution.
-
-Practicality: A lightweight tool for real-world use.
-
-License
+## License
 
 This project is open-source under the MIT License.

@@ -1,63 +1,84 @@
 import requests
 import os
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
+from bs4 import BeautifulSoup
 import hashlib
 
-def fetch_image(url):
-    """Fetch and save an image from a given URL with content-type validation."""
+def fetch_images_from_page(page_url):
+    """Scrape a webpage for images and download them."""
     try:
-        # Create directory if it doesn't exist
         os.makedirs("Fetched_Images", exist_ok=True)
 
-        # Fetch the image with a timeout
-        response = requests.get(url, timeout=10, stream=True)
-        response.raise_for_status()  # Handle HTTP errors
+        # Fetch the webpage
+        response = requests.get(page_url, timeout=10)
+        response.raise_for_status()
 
-        # Check if Content-Type indicates an image
-        content_type = response.headers.get("Content-Type", "")
-        if not content_type.startswith("image/"):
-            print(f"✗ Skipping: Content-Type '{content_type}' is not an image for {url}")
+        # Parse the webpage
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Find all image tags
+        img_tags = soup.find_all("img")
+        if not img_tags:
+            print(f"✗ No images found on: {page_url}")
             return
 
-        # Extract filename from URL or generate one
-        parsed_url = urlparse(url)
-        filename = os.path.basename(parsed_url.path)
+        for img in img_tags:
+            img_src = img.get("src")
+            if not img_src:
+                continue
 
-        if not filename:  # If URL has no filename
-            filename = "downloaded_image.jpg"
+            # Resolve relative URLs
+            img_url = urljoin(page_url, img_src)
 
-        # Prevent duplicates using a hash of the content
-        image_data = response.content
-        file_hash = hashlib.md5(image_data).hexdigest()
-        name, ext = os.path.splitext(filename)
-        filename = f"{name}_{file_hash[:8]}{ext}"
+            try:
+                # Download the image
+                img_resp = requests.get(img_url, timeout=10, stream=True)
+                img_resp.raise_for_status()
 
-        filepath = os.path.join("Fetched_Images", filename)
+                # Validate Content-Type
+                content_type = img_resp.headers.get("Content-Type", "")
+                if not content_type.startswith("image/"):
+                    print(f"✗ Skipping non-image: {img_url}")
+                    continue
 
-        # Save only if not already present
-        if not os.path.exists(filepath):
-            with open(filepath, 'wb') as f:
-                f.write(image_data)
-            print(f"✓ Successfully fetched: {filename}")
-            print(f"✓ Image saved to {filepath}")
-        else:
-            print(f"⚠ Skipped duplicate: {filename}")
+                # Extract filename
+                parsed_url = urlparse(img_url)
+                filename = os.path.basename(parsed_url.path)
+                if not filename:
+                    filename = "image.jpg"
+
+                # Add hash to avoid duplicates
+                img_data = img_resp.content
+                file_hash = hashlib.md5(img_data).hexdigest()
+                name, ext = os.path.splitext(filename)
+                filename = f"{name}_{file_hash[:8]}{ext}"
+                filepath = os.path.join("Fetched_Images", filename)
+
+                if not os.path.exists(filepath):
+                    with open(filepath, "wb") as f:
+                        f.write(img_data)
+                    print(f"✓ Downloaded: {filename}")
+                else:
+                    print(f"⚠ Skipped duplicate: {filename}")
+
+            except requests.exceptions.RequestException as e:
+                print(f"✗ Failed to download image: {img_url} ({e})")
 
     except requests.exceptions.RequestException as e:
-        print(f"✗ Connection error: {e}")
+        print(f"✗ Failed to fetch webpage: {page_url} ({e})")
     except Exception as e:
-        print(f"✗ An error occurred: {e}")
+        print(f"✗ Error processing {page_url}: {e}")
 
 def main():
-    print("Welcome to the Ubuntu Image Fetcher")
-    print("A tool for mindfully collecting images from the web\n")
+    print("Welcome to the Ubuntu Image Scraper")
+    print("A tool for mindfully collecting images from webpages\n")
 
-    urls = input("Enter image URLs separated by commas: ").split(",")
+    urls = input("Enter webpage URLs separated by commas: ").split(",")
 
     for url in urls:
         url = url.strip()
         if url:
-            fetch_image(url)
+            fetch_images_from_page(url)
 
     print("\nConnection strengthened. Community enriched.")
 
